@@ -4,6 +4,8 @@ import "simplelightbox/dist/simple-lightbox.min.css";
 import iziToast from "izitoast";
 import "izitoast/dist/css/iziToast.min.css";
 
+import axios from "axios";
+
 import { getPosts } from "./js/pixabay-api";
 import { createMarkup } from "./js/render-functions";
 
@@ -11,10 +13,20 @@ const form = document.querySelector(".form");
 const input = document.querySelector(".input");
 const gallery = document.querySelector(".gallery");
 const loader = document.querySelector(".loader2");
+const loadMoreButton = document.querySelector(".load-more");
+
+
+if (loadMoreButton) {
+  loadMoreButton.classList.add("load-more-hidden");
+}
+
+let page = 1;
+let query = '';
 
 const lightbox = new SimpleLightbox(".gallery a");
 
 form.addEventListener("submit", handleSubmit);
+loadMoreButton.addEventListener("click", loadMore);
 
 function showLoader(display) {
   loader.style.display = display;
@@ -28,10 +40,10 @@ function handleSubmit(event) {
   if (query === "") return;
 
   gallery.innerHTML = "";
-
+  page = 1;
   showLoader('block');
 
-  getPosts(query)
+  getPosts(query, page)
     .then(data => {
       if (data.hits.length === 0) {
         iziToast.warning({
@@ -50,6 +62,16 @@ function handleSubmit(event) {
         position: 'topRight',
         timeout: 2000
       });
+
+      if(page < data.totalHits) {
+        loadMoreButton.style.display = 'block';
+        iziToast.info({
+          title: 'Info',
+          message: 'No more images to load.',
+          position: 'topRight',
+          timeout: 2000
+        });
+      } 
     })
     .catch(error => {
       iziToast.error({
@@ -63,4 +85,46 @@ function handleSubmit(event) {
     .finally(() => {
       showLoader('none');
     });
+}
+
+async function loadMore() {
+  page += 1;
+  console.log(page);
+  loadMoreButton.disabled = true;
+
+  try {
+    const data = await getPosts(query, page);
+    gallery.insertAdjacentHTML("beforeend", createMarkup(data.hits));
+    lightbox.refresh();
+
+    const totalPages = Math.ceil(data.totalHits / 15);
+
+    if(page >= totalPages) {
+      loadMoreButton.style.display = 'none';
+      iziToast.info({
+        title: 'Info',
+        message: 'No more images to load.',
+        position: 'topRight',
+        timeout: 2000
+      });
+    } 
+
+    const card = document.querySelector(".gallery-item");
+    const cardHeight = card.getBoundingClientRect().height*3;
+    window.scrollBy({
+      left: 0,
+      top: cardHeight,
+      behavior: "smooth"
+    })
+  } catch {
+    iziToast.error({
+      title: 'Error',
+      message: `Something went wrong: ${error.message}`,
+      position: 'topRight',
+      timeout: 2000
+    });
+  }
+  finally{
+    loadMoreButton.disabled = false;
+  };
 }
