@@ -34,7 +34,7 @@ function showLoader(display) {
 
 showLoader('none');
 
-function handleSubmit(event) {
+async function handleSubmit(event) {
   event.preventDefault();
   const query = input.value.trim();
   if (query === "") return;
@@ -43,8 +43,8 @@ function handleSubmit(event) {
   page = 1;
   showLoader('block');
 
-  getPosts(query, page)
-    .then(data => {
+   const data = await getPosts(query, page)
+    try {
       if (data.hits.length === 0) {
         iziToast.warning({
           title: 'Warning',
@@ -65,15 +65,13 @@ function handleSubmit(event) {
 
       if(page < data.totalHits) {
         loadMoreButton.style.display = 'block';
-        iziToast.info({
-          title: 'Info',
-          message: 'No more images to load.',
-          position: 'topRight',
-          timeout: 2000
-        });
       } 
-    })
-    .catch(error => {
+      
+      if (data.totalHits < 15) {
+        loadMoreButton.style.display = 'none';
+      }
+    }
+    catch {
       iziToast.error({
         title: 'Error',
         message: `Something went wrong: ${error.message}`,
@@ -81,10 +79,10 @@ function handleSubmit(event) {
         timeout: 2000
       });
       console.error(error);
-    })
-    .finally(() => {
+    }
+    finally {
       showLoader('none');
-    });
+    };
 }
 
 async function loadMore() {
