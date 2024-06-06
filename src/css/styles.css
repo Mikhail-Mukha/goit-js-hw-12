@@ -180,11 +180,11 @@ body {
   left: 0;
   top: 0;
   box-sizing: border-box;
-  animation: rotation 2s ease-in-out infinite;
+  animation: rotation 1s ease-in-out infinite;
 }
 .loader2::after {
   border-color: #FF3D00;
-  animation-delay: 1s;
+  animation-delay: 0ms;
 }
 
 @keyframes rotation {
